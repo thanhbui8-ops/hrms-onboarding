@@ -1,0 +1,2599 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Onboarding — My Masterise</title>
+  <link rel="stylesheet" href="base.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; background: var(--bg-bold);
+    }
+
+    /* ── Phone shell ── */
+    .phone {
+      position: relative; width: 375px; height: 812px;
+      overflow: hidden; background: var(--bg-page);
+      box-shadow: var(--shadow-large); border-radius: var(--radius-sm);
+    }
+
+    /* ── Screen ── */
+    .screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 0.22s ease, visibility 0s 0.22s;
+    }
+    .screen.active {
+      opacity: 1; visibility: visible; pointer-events: all;
+      transition: opacity 0.22s ease, visibility 0s 0s;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      height: 44px; flex-shrink: 0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 20px 8px;
+      font-size: 12px; font-weight: 700;
+    }
+    .status-bar--dark { color: var(--text-invert); }
+    .status-bar--light { color: var(--text-primary); }
+    .status-bar--branded { background: var(--bg-brand-primary); color: var(--text-invert); }
+    .status-bar--transparent { background: transparent; color: var(--text-invert); }
+    .status-bar__right { display: flex; align-items: center; gap: 5px; }
+
+    /* ── Scrollbar hide ── */
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ── Nav Header ── */
+    .nav-header {
+      height: 44px; background: var(--bg-brand-primary);
+      display: flex; align-items: center;
+      padding: 0 var(--spacing-md); gap: var(--spacing-md); flex-shrink: 0;
+    }
+    .nav-header__back {
+      display: flex; align-items: center; justify-content: center;
+      width: 44px; height: 44px; margin-left: -8px;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text-invert);
+    }
+    .nav-header__back .material-symbols-outlined { font-size: 24px; }
+    .nav-header__title {
+      font-size: 18px; font-weight: 700;
+      color: var(--text-invert); flex: 1; line-height: 24px;
+    }
+    .nav-header__action {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text-invert); font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs);
+      width: 100%; border: none; cursor: pointer;
+      font-size: 16px; font-weight: 700; line-height: 24px;
+      border-radius: var(--radius-xs); padding: var(--spacing-md);
+    }
+    .btn--primary { background: var(--bg-brand-primary); color: var(--text-invert); }
+    .btn--primary:disabled { background: var(--bg-disable); color: var(--text-disable); cursor: not-allowed; }
+    .btn--secondary { background: var(--bg-brand-secondary); color: var(--text-brand); }
+    .btn--green { background: var(--bg-success-primary); color: var(--text-invert); }
+
+    /* ── Button Bar Sticky ── */
+    .btn-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--bg-surface-white); z-index: 300;
+    }
+    .btn-bar__divider { height: 1px; background: var(--bg-divider-grey); }
+    .btn-bar__group { padding: var(--spacing-xs) var(--spacing-md); }
+
+    /* ── Tab Bar ── */
+    .tab-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 83px;
+      background: var(--bg-surface-white);
+      border-top: 1px solid var(--bg-divider-grey);
+      display: flex; align-items: flex-start; padding-top: var(--spacing-xs);
+      z-index: 200;
+    }
+    .tab-item {
+      flex: 0 0 75px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: transparent; border: none; cursor: pointer; padding: 0;
+      color: var(--icon-primary);
+    }
+    .tab-item.active { color: var(--icon-brand); }
+    .tab-item__icon { font-size: 24px; }
+    .tab-item__label { font-size: 10px; font-weight: 700; line-height: 12px; }
+    .tab-item--qr {
+      flex: 0 0 75px; display: flex; flex-direction: column;
+      align-items: center; background: transparent; border: none; cursor: pointer; padding: 0;
+    }
+    .qr-pill {
+      width: 38px; height: 38px; background: var(--bg-brand-primary);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    }
+    .qr-pill .material-symbols-outlined { font-size: 22px; color: var(--text-invert); }
+    .noti-wrap { position: relative; display: inline-flex; }
+    .noti-badge {
+      position: absolute; top: -4px; right: -8px;
+      background: var(--bg-error-primary); color: var(--text-invert);
+      font-size: 9px; font-weight: 700; line-height: 1;
+      padding: 2px 4px; border-radius: 10px; min-width: 16px; text-align: center;
+    }
+
+    /* ═══════════════════════════════
+       SCREEN 1 — SPLASH / LOGIN
+    ═══════════════════════════════ */
+    #screen-splash {
+      background: var(--bg-brand-primary);
+      background-image: url('graphic_mag_pattern_white.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+    }
+    .splash-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 0 var(--spacing-xl); gap: var(--spacing-3xl);
+    }
+    .splash-logo-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: var(--spacing-lg);
+    }
+    .splash-logo { width: 160px; height: auto; object-fit: contain; }
+    .splash-tagline {
+      font-size: 14px; font-weight: 400;
+      color: var(--text-invert); text-align: center; line-height: 20px; opacity: 0.85;
+    }
+    .splash-actions {
+      width: 100%; display: flex; flex-direction: column;
+      align-items: center; gap: var(--spacing-xl);
+    }
+    .btn-ms {
+      width: 100%; display: flex; align-items: center; justify-content: center;
+      gap: var(--spacing-xs); padding: var(--spacing-md);
+      background: var(--bg-surface-white); border: none; border-radius: var(--radius-xs);
+      cursor: pointer; font-size: 16px; font-weight: 700; color: var(--text-primary);
+    }
+    .btn-ms .material-symbols-outlined { font-size: 20px; color: var(--icon-brand); }
+    .ms-logo { width: 20px; height: 20px; flex-shrink: 0; }
+    .btn-new-employee {
+      background: transparent; border: none;
+      color: var(--text-invert); font-size: 16px; font-weight: 700;
+      cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    }
+    .splash-footer {
+      padding: var(--spacing-xl); text-align: center;
+      font-size: 10px; line-height: 12px; color: var(--text-invert); opacity: 0.45;
+    }
+
+    /* ═══════════════════════════════
+       SCREEN 2 — OTP INPUT
+    ═══════════════════════════════ */
+    #screen-otp { background: var(--bg-surface-white); }
+
+    .code-body {
+      flex: 1; overflow: hidden;
+      display: flex; flex-direction: column;
+      padding: var(--spacing-3xl) var(--spacing-xl) 0;
+    }
+    .code-title {
+      font-size: 20px; font-weight: 700;
+      color: var(--text-primary); line-height: 28px;
+      text-align: center;
+    }
+    .code-subtitle {
+      font-size: 13px; font-weight: 400;
+      color: var(--text-secondary); line-height: 18px;
+      margin-top: var(--spacing-xs);
+      text-align: center;
+    }
+    .code-subtitle strong { color: var(--text-primary); font-weight: 700; }
+    .code-input-row {
+      display: flex; gap: var(--spacing-md);
+      justify-content: center;
+      margin-top: var(--spacing-xl);
+      padding: 0 var(--spacing-xs);
+    }
+    .code-char {
+      width: 36px;
+      display: flex; flex-direction: column; align-items: center; gap: var(--spacing-2xs);
+    }
+    .code-char__val {
+      font-size: 28px; font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1; min-height: 36px;
+      display: flex; align-items: center;
+    }
+    .code-char__line {
+      width: 100%; height: 2px;
+      background: var(--border-enable);
+      border-radius: var(--radius-xs);
+      transition: background 0.2s;
+    }
+    .code-char.filled .code-char__line { background: var(--bg-brand-primary); }
+    .code-input-row.has-error .code-char__line { background: var(--border-error); }
+    .code-error {
+      min-height: 20px;
+      margin-top: var(--spacing-xs);
+      padding: 0 var(--spacing-xs);
+      font-size: 12px;
+      line-height: 20px;
+      color: var(--text-error);
+      opacity: 0;
+    }
+    .code-error.visible { opacity: 1; }
+    .code-continue-wrap {
+      margin-top: auto;
+      padding: var(--spacing-md) 0 var(--spacing-xs);
+    }
+    .qwerty-kb { padding: 0 0 var(--spacing-sm); background: var(--bg-surface-grey); }
+    .qwerty-row {
+      display: flex; justify-content: center;
+      gap: var(--spacing-2xs); padding: var(--spacing-2xs);
+    }
+    .qkey {
+      height: 40px; min-width: 32px; flex: 1;
+      background: var(--bg-surface-white);
+      border: none; border-radius: var(--radius-xs);
+      box-shadow: var(--shadow-small);
+      font-size: 16px; font-weight: 400;
+      color: var(--text-primary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qkey--action {
+      background: var(--bg-disable); font-size: 13px; font-weight: 700;
+      min-width: 44px; flex: 1.4;
+    }
+    .qkey--space { flex: 4; font-size: 14px; }
+    .qkey--go {
+      background: var(--bg-brand-primary); color: var(--text-invert);
+      font-size: 14px; font-weight: 700;
+    }
+    .qkey--del { font-size: 18px; }
+
+    /* ═══════════════════════════════
+       SCREEN 3 — HOME + WELCOME POPUP
+    ═══════════════════════════════ */
+    /* Home header shared between screens 3 & 4 */
+    #screen-home,
+    #screen-home-popup {
+      background: var(--bg-page);
+      background-image: url('bg home.png');
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+      background-position: top center;
+    }
+
+    .home-header {
+      background: transparent;
+      padding: var(--spacing-lg) var(--spacing-xl);
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .home-header__left { display: flex; flex-direction: column; gap: 2px; }
+    .home-header__greeting {
+      font-size: 12px; font-weight: 400;
+      color: var(--text-invert); line-height: 20px;
+    }
+    .home-header__name { font-size: 20px; font-weight: 700; color: var(--text-invert); line-height: 28px; }
+    .home-avatar {
+      width: 44px; height: 44px; border-radius: 50%; overflow: hidden;
+      border: 2px solid var(--bg-divider-white); flex-shrink: 0;
+      background: var(--bg-surface-grey);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .home-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .home-avatar .material-symbols-outlined { font-size: 28px; color: var(--icon-primary); }
+
+    /* Home body shared */
+    .home-body {
+      flex: 1; overflow-y: auto; background: transparent;
+      padding: var(--spacing-md); display: flex; flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    .home-body--popup { padding-bottom: calc(83px + var(--spacing-md)); }
+    .home-body--normal { padding-bottom: calc(83px + var(--spacing-md)); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs); box-shadow: var(--shadow-small); overflow: hidden;
+    }
+    .app-card { min-height: 248px; }
+    .social-card { min-height: 112px; }
+
+    /* App grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 80px;
+      gap: var(--spacing-xs) var(--spacing-md);
+      padding: var(--spacing-md);
+    }
+    .app-item {
+      display: flex; flex-direction: column; align-items: center; gap: var(--spacing-2xs);
+      min-height: 80px; justify-content: flex-start; overflow: visible;
+      background: transparent; border: none; cursor: pointer;
+    }
+    .app-icon {
+      width: 56px; height: 56px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .app-icon img { width: 56px; height: 56px; object-fit: contain; }
+    .app-icon .material-symbols-outlined { font-size: 28px; color: var(--text-invert); }
+    .app-icon--nghiphep { background: var(--bg-info-primary); }
+    .app-icon--chamcong { background: var(--bg-success-primary); }
+    .app-icon--danhgia { background: var(--bg-brand-primary); }
+    .app-icon--phieuluong { background: var(--bg-warning-primary); }
+    .app-icon--danba { background: var(--bg-error-primary); }
+    .app-icon--manager { background: var(--bg-bold); }
+    .app-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: var(--bg-error-primary); color: var(--text-invert);
+      font-size: 9px; font-weight: 700; line-height: 1;
+      padding: 2px 5px; border-radius: 8px; min-width: 16px; text-align: center;
+    }
+    .app-badge--beta {
+      background: var(--bg-info-primary); color: var(--text-invert);
+      font-size: 8px;
+    }
+    .app-name {
+      display: block;
+      width: 100%;
+      min-height: 20px;
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 20px;
+      color: var(--text-primary);
+      text-align: center;
+      overflow: visible;
+    }
+    .app-grid-footer {
+      padding: var(--spacing-xs) var(--spacing-md) var(--spacing-md);
+      border-top: 1px solid var(--bg-divider-grey);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .link-text {
+      background: transparent; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 700; color: var(--text-brand);
+    }
+    .app-more {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-brand-secondary);
+      color: var(--text-brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .app-more .material-symbols-outlined { font-size: 28px; }
+
+    /* Social card */
+    .social-item {
+      display: flex; align-items: center; gap: var(--spacing-sm);
+      min-height: 56px;
+      padding: var(--spacing-md);
+      border-bottom: 1px solid var(--bg-divider-grey); cursor: pointer;
+    }
+    .social-item:last-child { border-bottom: none; }
+    .social-item__content { flex: 1; }
+    .social-item__title { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; }
+    .social-item__count { color: var(--text-brand); font-weight: 700; }
+    .social-emoji { width: 24px; height: 24px; display: inline-block; vertical-align: middle; }
+    .social-avatars { display: flex; align-items: center; margin-right: var(--spacing-xs); }
+    .s-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-surface-grey); border: 1.5px solid var(--bg-surface-white);
+      margin-left: -8px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .s-avatar:first-child { margin-left: 0; }
+    .s-avatar--more {
+      background: var(--bg-brand-secondary); color: var(--text-brand);
+      font-size: 10px; font-weight: 700;
+    }
+    .s-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .social-arrow { color: var(--icon-primary); font-size: 20px; }
+
+    /* Section title */
+    .section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 24px; }
+
+    /* Banner 361 */
+    .section-361 {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-xs);
+    }
+    .banner-361 {
+      position: relative; border-radius: var(--radius-xs); overflow: hidden;
+      aspect-ratio: 343 / 221; background: var(--bg-brand-secondary);
+    }
+    .banner-361 img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+    .banner-cta-wrap {
+      position: absolute; left: 0; right: 0; bottom: var(--spacing-md); z-index: 2;
+      display: flex; justify-content: center;
+    }
+    #screen-home-popup .banner-cta-wrap { display: none; }
+    #screen-home-popup .home-popup-start-wrap {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(83px + 24px);
+      z-index: 120;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #screen-home-popup .home-popup-start-wrap .btn-start-onboard { pointer-events: all; }
+    #screen-home-popup .btn-start-onboard {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    #screen-home-popup.active .btn-start-onboard {
+      animation: startOnboardEnter 0.42s ease forwards;
+    }
+    @keyframes startOnboardEnter {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-start-onboard {
+      display: inline-flex; align-items: center; gap: var(--spacing-xs);
+      padding: var(--spacing-xs) var(--spacing-md);
+      background: var(--bg-success-primary); color: var(--text-invert);
+      border: none; border-radius: var(--radius-xs);
+      font-size: 14px; font-weight: 700; cursor: pointer; line-height: 20px;
+    }
+    .btn-start-onboard.is-hidden { display: none; }
+    .js-start-onboard.is-hidden { display: none; }
+
+    /* ═══════════════════════════════
+       PRE-ONBOARD WELCOME + HOME
+    ═══════════════════════════════ */
+    #screen-welcome {
+      background-image: url('background_welcome.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+    }
+    .lang-toggle {
+      display: flex;
+      background: rgba(0,0,0,0.08);
+      border-radius: 20px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .lang-toggle--light { background: rgba(0,0,0,0.06); }
+    .lang-toggle .lang-btn {
+      background: transparent; border: none; cursor: pointer;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 16px;
+      line-height: 16px;
+      color: var(--text-secondary);
+      min-width: auto;
+    }
+    .lang-toggle .lang-btn.active--light { background: var(--bg-brand-primary); color: var(--text-invert); }
+    .welcome-topbar {
+      height: 44px; flex-shrink: 0;
+      display: flex; align-items: center;
+      justify-content: flex-end;
+      padding: 0 var(--spacing-md);
+    }
+    .welcome-scroll {
+      flex: 1; overflow-y: auto;
+      padding: 0 var(--spacing-xl) 140px;
+      display: flex; flex-direction: column;
+      align-items: center;
+    }
+    .welcome-logo-wrap {
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--spacing-xl) 0 var(--spacing-3xl);
+    }
+    .welcome-logo { width: 140px; height: auto; object-fit: contain; }
+    .welcome-intro {
+      font-size: 14px; font-weight: 400;
+      color: var(--text-secondary);
+      align-self: flex-start;
+      margin-bottom: var(--spacing-2xs);
+    }
+    .welcome-title {
+      font-size: 28px; font-weight: 700;
+      color: var(--text-brand); line-height: 32px;
+      align-self: flex-start;
+      margin-bottom: var(--spacing-md);
+    }
+    .welcome-text {
+      font-size: 14px; font-weight: 400;
+      color: var(--text-primary); line-height: 22px;
+      align-self: flex-start;
+    }
+    .welcome-text p { margin-bottom: var(--spacing-md); }
+    .welcome-text p:last-child { color: var(--text-secondary); }
+    .welcome-cta-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--bg-surface-white);
+      border-top: 1px solid var(--bg-divider-grey);
+      padding: var(--spacing-xs) var(--spacing-md);
+      padding-bottom: calc(var(--spacing-xs) + env(safe-area-inset-bottom));
+      opacity: 0; transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none; z-index: 10;
+    }
+    .welcome-cta-wrap.visible { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+    #screen-home {
+      background: var(--bg-surface-white);
+      background-image: url('bg_landing_page.png');
+      background-repeat: no-repeat;
+      background-size: 100% auto;
+      background-position: top center;
+    }
+    .home-scroll { flex: 1; overflow-y: auto; padding-bottom: 88px; position: relative; z-index: 1; }
+    .home-hero {
+      background: transparent;
+      padding: var(--spacing-md) var(--spacing-md) var(--spacing-xl);
+    }
+    .home-hero__topbar {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-md);
+    }
+    .home-hero__exit {
+      display: flex; align-items: center; gap: var(--spacing-2xs);
+      background: transparent; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-brand);
+    }
+    .home-hero__content {
+      display: flex; flex-direction: column;
+      align-items: center; gap: var(--spacing-xs);
+    }
+    .home-hero__avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--bg-surface-grey);
+      overflow: hidden; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .home-hero__avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .home-hero__info { text-align: center; }
+    .home-hero__greeting {
+      font-size: 10px; font-weight: 400; line-height: 12px;
+      color: var(--text-secondary); margin-bottom: var(--spacing-3xs);
+    }
+    .home-hero__name {
+      font-size: 20px; font-weight: 700;
+      color: var(--text-primary); line-height: 28px;
+    }
+    .home-hero__position {
+      font-size: 14px; font-weight: 400; line-height: 20px;
+      color: var(--text-secondary); margin-bottom: var(--spacing-xs);
+    }
+    .home-hero__link {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-brand); background: none;
+      border: none; cursor: pointer; padding: 0;
+    }
+    .countdown-card {
+      background: var(--bg-surface-white);
+      margin: var(--spacing-xs) var(--spacing-md);
+      border-radius: var(--radius-xs);
+      box-shadow: var(--shadow-small);
+      padding: var(--spacing-md);
+    }
+    .countdown-label {
+      font-size: 16px; font-weight: 700; line-height: 24px;
+      color: var(--text-primary); margin-bottom: var(--spacing-sm);
+      text-align: center;
+    }
+    .countdown-row { display: flex; gap: var(--spacing-xs); }
+    .countdown-unit {
+      flex: 1; background: var(--bg-brand-secondary);
+      border-radius: var(--radius-xs);
+      padding: var(--spacing-xs) var(--spacing-2xs);
+      text-align: center;
+    }
+    .countdown-unit__val {
+      font-size: 20px; font-weight: 700;
+      color: var(--text-brand); display: block; line-height: 28px;
+    }
+    .countdown-unit__lbl {
+      font-size: 10px; font-weight: 400; line-height: 12px;
+      color: var(--text-secondary); margin-top: var(--spacing-2xs); display: block;
+    }
+    .home-content {
+      padding: 0 var(--spacing-md);
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .home-section-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 24px;
+      color: var(--text-primary);
+      display: block;
+      text-align: center;
+    }
+    .alert-banner {
+      border-radius: var(--radius-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      display: flex; align-items: flex-start; gap: var(--spacing-xs);
+      margin-top: var(--spacing-xs);
+    }
+    .alert-banner--warning { background: var(--bg-warning-secondary); }
+    .alert-banner__icon-wrap {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-warning-primary);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .alert-banner__icon-wrap .material-symbols-outlined {
+      font-size: 18px; color: var(--text-invert);
+    }
+    .alert-banner__body { flex: 1; }
+    .alert-banner__text {
+      font-size: 14px; font-weight: 400;
+      color: var(--text-primary); line-height: 20px;
+    }
+    .alert-banner__deadline {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-primary);
+    }
+    .alert-banner__link {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-brand); background: none;
+      border: none; cursor: pointer; padding: 0;
+      margin-top: var(--spacing-2xs); display: block;
+    }
+    .section-card {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs);
+      box-shadow: var(--shadow-small);
+      overflow: hidden;
+      margin-top: var(--spacing-xs);
+    }
+    .section-card__header {
+      padding: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
+      font-size: 16px; font-weight: 700; line-height: 24px; color: var(--text-primary);
+      text-align: center;
+    }
+    .info-row {
+      display: flex; align-items: flex-start; gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--bg-divider-grey);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row__icon {
+      font-size: 20px; color: var(--text-brand);
+      flex-shrink: 0; width: 24px; margin-top: 1px;
+    }
+    .info-row__label {
+      font-size: 10px; font-weight: 400;
+      color: var(--text-secondary); line-height: 12px;
+    }
+    .info-row__value {
+      font-size: 14px; font-weight: 700;
+      color: var(--text-primary); line-height: 20px;
+    }
+    .info-row__phone {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-brand); text-decoration: none;
+    }
+    .contact-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-brand-secondary); overflow: hidden; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .contact-avatar__initials {
+      font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-brand);
+    }
+    .resource-img-card {
+      cursor: pointer; border: none; background: none;
+      padding: 0; width: 100%; text-align: left;
+    }
+    .resource-img-card + .resource-img-card { margin-top: var(--spacing-xl); }
+    .resource-img-card__cover {
+      width: 100%; height: 160px;
+      border-radius: var(--radius-xs);
+      background-image: url('Handbook image.png');
+      background-size: cover;
+      background-position: center;
+      display: block; overflow: hidden;
+    }
+    .resource-img-card__sub {
+      font-size: 10px; font-weight: 400; line-height: 12px;
+      color: var(--text-secondary); margin-top: var(--spacing-2xs);
+    }
+    .resource-img-card__title {
+      font-size: 16px; font-weight: 700;
+      color: var(--text-primary); line-height: 24px;
+      text-align: left;
+    }
+    .resource-title-row {
+      position: relative; display: flex; align-items: center;
+      justify-content: flex-start; padding-right: 72px;
+    }
+    .resource-title-row .office-section__link { position: absolute; right: 0; }
+    .office-section {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs);
+      box-shadow: var(--shadow-small);
+      overflow: hidden;
+      margin-top: var(--spacing-xs);
+      padding: var(--spacing-md);
+    }
+    .office-section__header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--spacing-sm);
+    }
+    .office-section__title {
+      font-size: 16px; font-weight: 700; line-height: 24px; color: var(--text-primary);
+      text-align: center; width: 100%;
+    }
+    .office-section__link {
+      font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-brand);
+      background: none; border: none; cursor: pointer;
+    }
+    .office-item {
+      display: flex; align-items: flex-start; gap: var(--spacing-sm);
+      padding: var(--spacing-xs) 0;
+      border-bottom: 1px solid var(--bg-divider-grey);
+    }
+    .office-item:last-child { border-bottom: none; }
+    .office-item__icon {
+      width: 64px; height: 64px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .office-item__body { flex: 1; }
+    .office-item__city { font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-primary); }
+    .office-item__addr { font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 20px; margin-top: var(--spacing-3xs); }
+    .office-item__map {
+      font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-brand);
+      background: none; border: none; cursor: pointer;
+      margin-top: var(--spacing-2xs); display: block;
+    }
+    .social-section {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs);
+      box-shadow: var(--shadow-small);
+      padding: var(--spacing-md);
+      margin-top: var(--spacing-xs);
+    }
+    .social-title { font-size: 16px; font-weight: 700; line-height: 24px; color: var(--text-primary); text-align: center; margin-bottom: var(--spacing-sm); }
+    .social-row { display: flex; gap: var(--spacing-sm); justify-content: center; }
+    .social-icon {
+      width: 40px; height: 40px; border-radius: var(--radius-xs);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; line-height: 24px; cursor: pointer; border: none;
+      background: var(--bg-brand-secondary); color: var(--text-brand);
+    }
+    .social-icon .material-symbols-outlined { font-size: 20px; }
+    #screen-home .home-cta {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: var(--bg-surface-white);
+      border-top: 1px solid var(--bg-divider-grey);
+      padding: var(--spacing-xs) var(--spacing-md);
+      padding-bottom: calc(var(--spacing-xs) + env(safe-area-inset-bottom));
+      z-index: 10;
+    }
+
+    /* Welcome popup overlay */
+    .popup-overlay {
+      position: absolute; inset: 0; background: var(--bg-overlay);
+      z-index: 400; display: flex; align-items: center; justify-content: center;
+      padding: var(--spacing-md);
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .popup-overlay.open { opacity: 1; pointer-events: all; }
+    .popup-card {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      width: 100%;
+      box-shadow: var(--shadow-large);
+      transform: scale(0.96);
+      transition: transform 0.22s ease;
+    }
+    .popup-overlay.open .popup-card { transform: scale(1); }
+    .popup-banner { width: 100%; aspect-ratio: 343 / 183; object-fit: cover; display: block; }
+    .popup-body {
+      padding: var(--spacing-xl);
+      display: flex; flex-direction: column; gap: var(--spacing-sm);
+    }
+    .popup-title { font-size: 24px; font-weight: 700; color: var(--text-brand); line-height: 32px; text-align: center; }
+    .popup-subtitle { font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 20px; text-align: center; }
+    .popup-cta { padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xl); }
+
+    /* ═══════════════════════════════
+       SCREEN 5 — TASK LIST
+    ═══════════════════════════════ */
+    #screen-tasks { background: var(--bg-page); }
+
+    .tasks-info-tip {
+      margin: var(--spacing-md) var(--spacing-md) 0;
+      background: var(--bg-surface-white);
+      border: 1px solid var(--bg-divider-grey);
+      border-radius: var(--radius-xs);
+      padding: var(--spacing-md);
+      display: flex; align-items: flex-start; gap: var(--spacing-sm);
+    }
+    .tasks-info-tip__icon-wrap {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .tasks-info-tip__icon-wrap img { width: 48px; height: 48px; object-fit: contain; }
+    .tasks-info-tip__text {
+      font-size: 14px; font-weight: 400; color: var(--text-primary);
+      line-height: 20px; flex: 1; min-width: 0; overflow-wrap: anywhere;
+    }
+    .tasks-info-tip__date { font-weight: 700; color: var(--text-warning); }
+
+    .progress-wrap {
+      margin: var(--spacing-md) var(--spacing-md) var(--spacing-xs);
+      padding: var(--spacing-md);
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    .progress-label-row {
+      display: flex; align-items: center; justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .progress-label {
+      font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 20px;
+      white-space: nowrap;
+    }
+    .progress-label strong {
+      font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 24px;
+    }
+    .progress-track {
+      flex: 1; min-width: 0; height: 8px;
+      background: var(--bg-success-secondary);
+      border-radius: 999px; overflow: hidden;
+    }
+    .progress-fill { height: 100%; background: var(--bg-success-primary); border-radius: 999px; transition: width 0.4s ease; }
+
+    .task-list {
+      flex: 1; overflow-y: auto;
+      padding: 0 var(--spacing-md) calc(104px + var(--spacing-md));
+    }
+    .task-item {
+      display: flex; align-items: center; gap: var(--spacing-sm);
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid var(--bg-divider-grey);
+      background: transparent; border-top: none; border-left: none; border-right: none;
+      cursor: pointer; text-align: left; width: 100%;
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-check {
+      width: 22px; height: 22px; border: 2px solid var(--border-enable);
+      border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-surface-white);
+    }
+    .task-item.done .task-check {
+      background: var(--bg-brand-primary); border-color: var(--bg-brand-primary);
+    }
+    .task-item.locked { cursor: default; }
+    .task-item.locked .task-check {
+      background: var(--bg-disable);
+      border-color: var(--bg-disable);
+      cursor: not-allowed;
+    }
+    .check-icon { font-size: 14px; color: var(--text-invert); opacity: 0; }
+    .task-item.done .check-icon { opacity: 1; }
+    .task-label { flex: 1; font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; text-align: left; }
+    .task-item.done .task-label { color: var(--text-secondary); text-decoration: line-through; text-decoration-color: var(--border-disable); }
+    .task-arrow { color: var(--icon-primary); font-size: 20px; cursor: pointer; }
+    .task-arrow--success { color: var(--text-success); }
+
+    /* ═══════════════════════════════
+       SCREEN 6 — QUIZ
+    ═══════════════════════════════ */
+    #screen-quiz { background: var(--bg-page); }
+    .quiz-body {
+      flex: 1; overflow-y: auto;
+      padding: var(--spacing-md) var(--spacing-md) calc(89px + var(--spacing-md));
+      display: flex; flex-direction: column; gap: var(--spacing-md);
+    }
+    .quiz-inform {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-md);
+      display: flex; align-items: center; gap: var(--spacing-md);
+    }
+    .quiz-inform img { width: 48px; height: 48px; object-fit: contain; flex-shrink: 0; }
+    .quiz-inform__text { font-size: 14px; font-weight: 400; line-height: 20px; color: var(--text-primary); }
+    .quiz-q { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+    .quiz-q__title {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-primary);
+    }
+    .quiz-feedback {
+      display: none;
+      font-size: 14px; font-weight: 400; line-height: 20px;
+      color: var(--text-warning);
+    }
+    .quiz-feedback.is-visible { display: block; }
+    .quiz-options {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+    }
+    .quiz-option {
+      width: 100%; min-height: 64px;
+      padding: var(--spacing-md);
+      display: flex; align-items: center; gap: var(--spacing-sm);
+      border: none; border-bottom: 1px solid var(--bg-divider-grey);
+      background: var(--bg-surface-white);
+      color: var(--text-primary); text-align: left; cursor: pointer;
+      font-size: 14px; font-weight: 700; line-height: 20px;
+    }
+    .quiz-option:last-child { border-bottom: none; }
+    .quiz-radio {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1.5px solid var(--border-enable);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .quiz-radio::after {
+      content: '';
+      width: 14px; height: 14px; border-radius: 50%;
+      background: transparent;
+    }
+    .quiz-option__label { flex: 1; min-width: 0; }
+    .quiz-status {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+      color: var(--text-invert); flex-shrink: 0;
+    }
+    .quiz-status .material-symbols-outlined { font-size: 20px; }
+    .quiz-option.is-correct { color: var(--text-success); }
+    .quiz-option.is-correct .quiz-radio { border-color: var(--bg-success-primary); }
+    .quiz-option.is-correct .quiz-radio::after { background: var(--bg-success-primary); }
+    .quiz-option.is-correct .quiz-status { display: flex; background: var(--bg-success-primary); }
+    .quiz-option.is-wrong { color: var(--text-warning); }
+    .quiz-option.is-wrong .quiz-radio { border-color: var(--bg-warning-primary); }
+    .quiz-option.is-wrong .quiz-radio::after { background: var(--bg-warning-primary); }
+    .quiz-option.is-wrong .quiz-status { display: flex; background: var(--bg-warning-primary); }
+
+    /* ═══════════════════════════════
+       SCREEN 7 — SURVEY
+    ═══════════════════════════════ */
+    #screen-survey { background: var(--bg-surface-white); }
+    .survey-body {
+      flex: 1; overflow-y: auto;
+      padding: var(--spacing-md) var(--spacing-md) calc(89px + var(--spacing-md));
+      display: flex; flex-direction: column; gap: var(--spacing-xl);
+    }
+    .survey-header-card {
+      background: var(--bg-brand-secondary); border-radius: var(--radius-xs);
+      padding: var(--spacing-md);
+      display: flex; align-items: center; gap: var(--spacing-md);
+    }
+    .survey-icon-wrap {
+      width: 48px; height: 48px; background: var(--bg-brand-primary);
+      border-radius: var(--radius-xs); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .survey-icon-wrap .material-symbols-outlined { font-size: 24px; color: var(--text-invert); }
+    .survey-header-text { font-size: 14px; font-weight: 700; color: var(--text-brand); line-height: 20px; }
+
+    .survey-q { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+    .survey-q-num { font-size: 12px; font-weight: 700; color: var(--text-brand); }
+    .survey-q-title { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 20px; }
+    .survey-q-hint { font-size: 12px; font-weight: 400; color: var(--text-secondary); line-height: 20px; }
+
+    .rating-scale { display: flex; gap: var(--spacing-2xs); }
+    .rating-cell {
+      flex: 1; height: 40px;
+      border: 1px solid var(--border-enable); border-radius: var(--radius-xs);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: var(--text-secondary);
+      cursor: pointer; background: var(--bg-surface-white); transition: all 0.15s;
+    }
+    .rating-cell.selected { background: var(--bg-brand-primary); color: var(--text-invert); border-color: var(--bg-brand-primary); }
+
+    .yn-opts { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+    .yn-opt {
+      display: flex; align-items: center; gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--border-enable); border-radius: var(--radius-xs);
+      cursor: pointer; background: var(--bg-surface-white);
+    }
+    .yn-opt.selected { border-color: var(--border-primary); background: var(--bg-brand-secondary); }
+    .yn-radio {
+      width: 20px; height: 20px; border: 2px solid var(--border-enable); border-radius: 50%;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .yn-opt.selected .yn-radio { border-color: var(--border-primary); }
+    .yn-radio-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--bg-brand-primary); display: none; }
+    .yn-opt.selected .yn-radio-dot { display: block; }
+    .yn-label { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; }
+
+    .survey-textarea {
+      width: 100%; min-height: 80px;
+      border: 1px solid var(--border-enable); border-radius: var(--radius-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: 14px; font-weight: 400; color: var(--text-primary);
+      font-family: inherit; line-height: 20px; resize: none; outline: none;
+    }
+    .survey-textarea:focus { border-color: var(--border-primary); }
+    .survey-textarea::placeholder { color: var(--text-placeholder); }
+
+    /* ═══════════════════════════════
+       SCREEN 8 — SUCCESS
+    ═══════════════════════════════ */
+    #screen-success {
+      background: var(--bg-surface-white);
+      background-image: url('background_welcome.png');
+      background-size: cover;
+      background-position: top center;
+      background-repeat: no-repeat;
+    }
+    #screen-success .status-bar {
+      font-size: 16px;
+      font-weight: 700;
+      padding: 0 33px 8px;
+    }
+    #screen-success .status-bar__right .material-symbols-outlined { font-size: 18px !important; }
+    .success-lang {
+      position: absolute; top: 58px; right: var(--spacing-xl);
+      display: flex; background: rgba(151, 117, 75, 0.18); border-radius: 24px; padding: var(--spacing-3xs); gap: var(--spacing-3xs);
+      z-index: 10;
+    }
+    .lang-btn {
+      background: transparent; border: none; cursor: pointer;
+      min-width: 40px;
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      padding: 7px 12px; border-radius: 20px; color: var(--text-invert);
+    }
+    .lang-btn.active { background: var(--bg-brand-primary); color: var(--text-invert); }
+    .success-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 78px var(--spacing-xl) 120px; gap: 0;
+    }
+    .success-logo { width: 140px; height: auto; display: block; margin-bottom: 36px; }
+    .success-brand {
+      font-size: 26px; font-weight: 700; color: var(--text-brand);
+      text-align: center; line-height: 32px;
+    }
+    .success-msg { text-align: center; display: flex; flex-direction: column; gap: 0; margin-top: 28px; }
+    .success-msg p { font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 20px; }
+    .success-msg strong { font-weight: 700; color: var(--text-brand); }
+    .success-footer { position: absolute; bottom: 0; left: 0; right: 0; padding: var(--spacing-xs) var(--spacing-md); background: var(--bg-surface-white); }
+    .success-footer .btn-bar__divider { height: 1px; background: var(--bg-divider-grey); margin-bottom: var(--spacing-xs); }
+
+    /* ═══════════════════════════════
+       BOTTOM SHEETS
+    ═══════════════════════════════ */
+    .sheet-overlay {
+      position: absolute; inset: 0;
+      background: var(--bg-overlay); z-index: 500;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .sheet-overlay.open { opacity: 1; pointer-events: all; }
+    .sheet {
+      background: var(--bg-surface-white);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transform: translateY(100%); max-height: 80%;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sheet-overlay.open .sheet { transform: translateY(0); }
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md);
+      border-bottom: 1px solid var(--bg-divider-grey); flex-shrink: 0;
+    }
+    .sheet-title { font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 24px; flex: 1; }
+    .sheet-close {
+      width: 32px; height: 32px; background: transparent; border: none; cursor: pointer;
+      color: var(--icon-primary); display: flex; align-items: center; justify-content: center;
+    }
+    .sheet-close .material-symbols-outlined { font-size: 22px; }
+    .sheet-scroll { overflow-y: auto; flex: 1; }
+    .sheet-person {
+      display: flex; align-items: center; gap: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-xl);
+      border-bottom: 1px solid var(--bg-divider-grey);
+    }
+    .sheet-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--bg-surface-grey); overflow: hidden; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sheet-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sheet-person-name { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 20px; }
+    .sheet-contact-list { padding: var(--spacing-sm) var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-sm); }
+    .sheet-contact-row { display: flex; align-items: center; gap: var(--spacing-sm); }
+    .sheet-contact-row .material-symbols-outlined { font-size: 20px; color: var(--icon-primary); flex-shrink: 0; }
+    .sheet-contact-row a, .sheet-contact-row span { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; }
+    .sheet-contact-row a { color: var(--text-brand); text-decoration: none; }
+    .sheet-body-text { padding: var(--spacing-md) var(--spacing-xl); }
+    .sheet-body-text p { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; }
+    .sheet-body-text p + p { margin-top: var(--spacing-sm); }
+    .sheet-body-text b, .sheet-body-text strong { font-weight: 700; }
+    .sheet-cta { padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xl); }
+    .sheet-channels { padding: var(--spacing-md) var(--spacing-xl); }
+    .sheet-channels p { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; margin-bottom: var(--spacing-sm); }
+    .channel-section { margin-bottom: var(--spacing-md); }
+    .channel-section-title { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 20px; margin-bottom: var(--spacing-xs); }
+    .channel-entry { font-size: 14px; font-weight: 400; color: var(--text-primary); line-height: 20px; margin-bottom: var(--spacing-2xs); }
+    .channel-entry b { font-weight: 700; }
+    .employee-info-list { padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xl); }
+    .info-field {
+      padding: var(--spacing-md) 0;
+      border-bottom: 1px solid var(--bg-divider-grey);
+    }
+    .info-field:last-child { border-bottom: none; }
+    .info-field__label {
+      font-size: 12px; font-weight: 400; line-height: 20px;
+      color: var(--text-secondary); margin-bottom: var(--spacing-3xs);
+    }
+    .info-field__value {
+      font-size: 14px; font-weight: 700; line-height: 20px;
+      color: var(--text-primary);
+    }
+    .doc-note {
+      font-size: 14px; font-weight: 400; line-height: 20px;
+      color: var(--text-secondary); text-align: center;
+      margin-bottom: var(--spacing-xs);
+    }
+    .doc-list { padding: var(--spacing-xs) var(--spacing-xl) var(--spacing-xl); }
+    .doc-item {
+      display: flex; align-items: flex-start; gap: var(--spacing-sm);
+      padding: var(--spacing-md) 0;
+      border-bottom: 1px solid var(--bg-divider-grey);
+    }
+    .doc-item:last-child { border-bottom: none; }
+    .doc-item__index {
+      width: 24px; height: 24px; border-radius: var(--radius-xs);
+      background: var(--bg-brand-secondary); color: var(--text-brand);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 14px; font-weight: 700; line-height: 20px;
+    }
+    .doc-item__content { flex: 1; min-width: 0; }
+    .doc-item__title { font-size: 14px; font-weight: 700; line-height: 20px; color: var(--text-primary); }
+    .doc-item__desc {
+      font-size: 14px; font-weight: 400; color: var(--text-secondary);
+      line-height: 20px; margin-top: var(--spacing-2xs);
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ═══════════════════════════════════
+       SCREEN 1 — SPLASH / LOGIN
+  ═══════════════════════════════════ -->
+  <div class="screen active" id="screen-splash">
+    <div class="status-bar status-bar--dark">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="splash-body">
+      <div class="splash-logo-wrap">
+        <img class="splash-logo" src="logo_mag_white.png" alt="Masterise Group">
+        <p class="splash-tagline">Ứng dụng dành cho Cán bộ nhân viên</p>
+      </div>
+      <div class="splash-actions">
+        <button class="btn-ms" id="btn-ms-login" aria-disabled="true" onclick="handleMicrosoftLogin()">
+          <svg class="ms-logo" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="0" y="0" width="10" height="10" fill="#F25022"/>
+            <rect x="11" y="0" width="10" height="10" fill="#7FBA00"/>
+            <rect x="0" y="11" width="10" height="10" fill="#00A4EF"/>
+            <rect x="11" y="11" width="10" height="10" fill="#FFB900"/>
+          </svg>
+          Đăng nhập bằng Microsoft
+        </button>
+        <button class="btn-new-employee" onclick="goTo('screen-otp')">Bạn là nhân viên mới?</button>
+      </div>
+    </div>
+    <div class="splash-footer">Copyright © 2021 by Masterise Group</div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 2 — OTP INPUT
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-otp">
+    <div class="status-bar status-bar--branded">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="nav-header">
+      <button class="nav-header__back" onclick="goTo('screen-splash')" aria-label="Quay lại">
+        <span class="material-symbols-outlined">arrow_back_ios</span>
+      </button>
+      <span class="nav-header__title">Onboard nhân viên mới</span>
+    </div>
+    <div class="code-body">
+      <div class="code-title">Nhập mã onboard</div>
+      <div class="code-subtitle">Mã đã được gửi qua email <strong>tuna21@masterise.com</strong></div>
+
+      <div class="code-input-row" id="code-boxes">
+        <div class="code-char" id="cc-0"><div class="code-char__val"></div><div class="code-char__line"></div></div>
+        <div class="code-char" id="cc-1"><div class="code-char__val"></div><div class="code-char__line"></div></div>
+        <div class="code-char" id="cc-2"><div class="code-char__val"></div><div class="code-char__line"></div></div>
+        <div class="code-char" id="cc-3"><div class="code-char__val"></div><div class="code-char__line"></div></div>
+      </div>
+      <div class="code-error" id="code-error">Mã onboard chưa đúng. Vui lòng kiểm tra lại email chào mừng.</div>
+
+      <div class="code-continue-wrap">
+        <button class="btn btn--primary" id="code-continue-btn" disabled onclick="submitCode()">Tiếp tục</button>
+      </div>
+    </div>
+
+    <div class="qwerty-kb">
+      <div class="qwerty-row">
+        <button class="qkey" data-key="1">1</button><button class="qkey" data-key="2">2</button>
+        <button class="qkey" data-key="3">3</button><button class="qkey" data-key="4">4</button>
+        <button class="qkey" data-key="5">5</button><button class="qkey" data-key="6">6</button>
+        <button class="qkey" data-key="7">7</button><button class="qkey" data-key="8">8</button>
+        <button class="qkey" data-key="9">9</button><button class="qkey" data-key="0">0</button>
+      </div>
+      <div class="qwerty-row">
+        <button class="qkey" data-key="Q">Q</button><button class="qkey" data-key="W">W</button>
+        <button class="qkey" data-key="E">E</button><button class="qkey" data-key="R">R</button>
+        <button class="qkey" data-key="T">T</button><button class="qkey" data-key="Y">Y</button>
+        <button class="qkey" data-key="U">U</button><button class="qkey" data-key="I">I</button>
+        <button class="qkey" data-key="O">O</button><button class="qkey" data-key="P">P</button>
+      </div>
+      <div class="qwerty-row">
+        <button class="qkey" data-key="A">A</button><button class="qkey" data-key="S">S</button>
+        <button class="qkey" data-key="D">D</button><button class="qkey" data-key="F">F</button>
+        <button class="qkey" data-key="G">G</button><button class="qkey" data-key="H">H</button>
+        <button class="qkey" data-key="J">J</button><button class="qkey" data-key="K">K</button>
+        <button class="qkey" data-key="L">L</button>
+      </div>
+      <div class="qwerty-row">
+        <button class="qkey qkey--action" data-key="SHIFT">
+          <span class="material-symbols-outlined" style="font-size:18px">keyboard_shift</span>
+        </button>
+        <button class="qkey" data-key="Z">Z</button><button class="qkey" data-key="X">X</button>
+        <button class="qkey" data-key="C">C</button><button class="qkey" data-key="V">V</button>
+        <button class="qkey" data-key="B">B</button><button class="qkey" data-key="N">N</button>
+        <button class="qkey" data-key="M">M</button>
+        <button class="qkey qkey--action qkey--del" data-key="DEL">
+          <span class="material-symbols-outlined" style="font-size:18px">backspace</span>
+        </button>
+      </div>
+      <div class="qwerty-row">
+        <button class="qkey qkey--action" data-key="123">123</button>
+        <button class="qkey qkey--space" data-key="SPACE">space</button>
+        <button class="qkey qkey--action qkey--go" data-key="GO" onclick="if(!document.getElementById('code-continue-btn').disabled) submitCode()">Go</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 3 — HOME + WELCOME POPUP
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-home-popup">
+    <div class="status-bar status-bar--transparent">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="home-header">
+      <div class="home-header__left">
+        <span class="home-header__greeting">Chúc bạn một ngày làm việc hiệu quả</span>
+        <span class="home-header__name">Nguyễn Anh Tú</span>
+      </div>
+      <div class="home-avatar">
+        <span class="material-symbols-outlined">account_circle</span>
+      </div>
+    </div>
+    <div class="home-body home-body--popup" id="home-popup-body">
+      <div class="card app-card">
+        <div class="app-grid">
+          <button class="app-item"><div class="app-icon"><img src="Nghỉ phép icon container.png" alt=""></div><span class="app-name">Nghỉ phép</span></button>
+          <button class="app-item"><div class="app-icon"><img src="Chấm công icon container.png" alt=""></div><span class="app-name">Chấm công</span></button>
+          <button class="app-item"><div class="app-icon"><img src="Đánh giá HĐ icon container.png" alt=""></div><span class="app-name">Đánh giá HD</span></button>
+          <button class="app-item"><div class="app-icon"><div class="app-badge">2</div><img src="Phiếu lương icon container.png" alt=""></div><span class="app-name">Phiếu lương</span></button>
+          <button class="app-item"><div class="app-icon"><img src="Danh bạ icon container.png" alt=""></div><span class="app-name">Danh bạ</span></button>
+          <button class="app-item"><div class="app-icon"><div class="app-badge app-badge--beta">Beta</div><img src="Manager 360 icon container.png" alt=""></div><span class="app-name">Manager 360</span></button>
+        </div>
+        <div class="app-grid-footer"><button class="link-text">Xem tất cả</button></div>
+      </div>
+      <div class="card social-card">
+        <div class="social-item">
+          <div class="social-item__content">
+            <div class="social-item__title"><span class="social-item__count">5 đồng nghiệp</span> sắp gia nhập</div>
+          </div>
+          <div class="social-avatars">
+            <div class="s-avatar"><span class="material-symbols-outlined" style="font-size:18px;color:var(--icon-primary)">person</span></div>
+            <div class="s-avatar"><span class="material-symbols-outlined" style="font-size:18px;color:var(--icon-primary)">person</span></div>
+            <div class="s-avatar s-avatar--more">+3</div>
+          </div>
+          <span class="material-symbols-outlined social-arrow">chevron_right</span>
+        </div>
+        <div class="social-item">
+          <div class="social-item__content">
+            <div class="social-item__title">Sinh nhật <span style="color:var(--text-brand);font-weight:700">sắp đến</span> <img class="social-emoji" src="Icon birthday.png" alt=""></div>
+          </div>
+          <div class="social-avatars">
+            <div class="s-avatar"><span class="material-symbols-outlined" style="font-size:18px;color:var(--icon-primary)">person</span></div>
+          </div>
+          <span class="material-symbols-outlined social-arrow">chevron_right</span>
+        </div>
+      </div>
+      <div class="section-361">
+        <span class="section-title">361° Masterise Group</span>
+        <div class="banner-361">
+          <img src="banner mag.png" alt="" onerror="this.style.display='none'">
+        </div>
+      </div>
+    </div>
+
+    <div class="home-popup-start-wrap">
+      <button class="btn-start-onboard js-start-onboard" onclick="startOnboardFromHomePopup()">
+        Tiếp tục hành trình Onboard
+        <span class="material-symbols-outlined" style="font-size:18px">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Welcome popup overlay -->
+    <div class="popup-overlay" id="welcome-popup" role="dialog" aria-modal="true" aria-labelledby="welcome-popup-title">
+      <div class="popup-card">
+        <img class="popup-banner" src="Banner welcome.png" alt="Chào mừng" onerror="this.style.display='none'">
+        <div class="popup-body">
+          <h3 class="popup-title" id="welcome-popup-title">Chào mừng Nguyễn Anh Tú gia nhập Masterise</h3>
+          <p class="popup-subtitle">Chúc bạn có hành trình mới đầy thành công!</p>
+        </div>
+        <div class="popup-cta">
+          <button class="btn btn--primary" onclick="dismissWelcomePopup()">Trải nghiệm ngay</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab bar (visible behind popup) -->
+    <nav class="tab-bar">
+      <button class="tab-item active">
+        <img src="logo_mag_brown.png" style="width:24px;height:24px;object-fit:contain" alt="Trang chủ" onerror="this.outerHTML='<span class=\'material-symbols-outlined tab-item__icon\'>home</span>'">
+        <span class="tab-item__label">Trang chủ</span>
+      </button>
+      <button class="tab-item"><span class="material-symbols-outlined tab-item__icon">article</span><span class="tab-item__label">Tin tức</span></button>
+      <button class="tab-item--qr"><div class="qr-pill"><span class="material-symbols-outlined">qr_code_scanner</span></div></button>
+      <button class="tab-item">
+        <div class="noti-wrap"><span class="material-symbols-outlined tab-item__icon">notifications</span><span class="noti-badge">5</span></div>
+        <span class="tab-item__label">Thông báo</span>
+      </button>
+      <button class="tab-item"><span class="material-symbols-outlined tab-item__icon">account_circle</span><span class="tab-item__label">Tài khoản</span></button>
+    </nav>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 4 — WELCOME
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-welcome">
+    <div class="status-bar status-bar--light">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="welcome-topbar">
+      <div class="lang-toggle lang-toggle--light" style="margin-left:auto">
+        <button class="lang-btn active--light">Vi</button>
+        <button class="lang-btn">En</button>
+      </div>
+    </div>
+
+    <div class="welcome-scroll" id="welcome-scroll">
+      <div class="welcome-logo-wrap">
+        <img class="welcome-logo" src="logo_mag_brown.png" alt="Masterise Group">
+      </div>
+      <div class="welcome-intro">Chào mừng</div>
+      <div class="welcome-title">Masterise Group</div>
+      <div class="welcome-text">
+        <p>Chào mừng <strong>Nguyễn Anh Tú</strong> đến với Masterise và bắt đầu tham gia vào hành trình kiến tạo hệ sinh thái công nghệ lớn nhất Việt Nam.</p>
+        <p>Chúng tôi rất vui mừng khi được đồng hành cùng bạn trên chặng đường mới này với nhiều điều hào hứng và thú vị đang chờ bạn khám phá.</p>
+        <p>Chúng tôi hiểu rằng những bỡ ngỡ ban đầu là không thể tránh khỏi. Vì vậy, My Masterise sẽ giúp bạn nắm bắt những thông tin cần biết, những điều cần chuẩn bị, những quy định quan trọng, những công cụ hay dùng và các đầu mối liên hệ.</p>
+        <p>Chúc bạn sẽ có nhiều trải nghiệm đáng nhớ tại Masterise.</p>
+      </div>
+      <div id="welcome-sentinel" style="height:1px;flex-shrink:0;width:100%"></div>
+    </div>
+
+    <div class="welcome-cta-wrap" id="welcome-cta">
+      <button class="btn btn--primary" onclick="goTo('screen-home')">Tiếp tục</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 5 — HOME DASHBOARD
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-home">
+    <div class="status-bar status-bar--light" style="background:transparent; position:relative; z-index:1; color:var(--text-invert)">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="home-scroll">
+      <div class="home-hero">
+        <div class="home-hero__topbar">
+          <button class="home-hero__exit" onclick="goTo('screen-splash')">
+            Thoát
+            <span class="material-symbols-outlined" style="font-size:16px">logout</span>
+          </button>
+          <div class="lang-toggle lang-toggle--light">
+            <button class="lang-btn active--light">Vi</button>
+            <button class="lang-btn">En</button>
+          </div>
+        </div>
+        <div class="home-hero__content">
+          <div class="home-hero__avatar">
+            <img src="onboarding-task-img48.png" alt="Nguyễn Anh Tú">
+          </div>
+          <div class="home-hero__info">
+            <div class="home-hero__greeting">Chúc một ngày tốt lành</div>
+            <div class="home-hero__name">Nguyễn Anh Tú</div>
+            <div class="home-hero__position">Chuyên viên cao cấp Kỹ sư CN - UI/UX</div>
+            <button class="home-hero__link" onclick="openSheet('employee-sheet')">Xem đầy đủ thông tin</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: var(--spacing-md) var(--spacing-md) 0">
+        <div class="countdown-card" style="margin:0">
+          <div class="countdown-label">Đếm ngược đến ngày Onboard</div>
+          <div class="countdown-row">
+            <div class="countdown-unit">
+              <span class="countdown-unit__val" id="cd-days">14</span>
+              <span class="countdown-unit__lbl">Days</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-unit__val" id="cd-hours">06</span>
+              <span class="countdown-unit__lbl">Hours</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-unit__val" id="cd-mins">22</span>
+              <span class="countdown-unit__lbl">Min</span>
+            </div>
+            <div class="countdown-unit">
+              <span class="countdown-unit__val" id="cd-secs">48</span>
+              <span class="countdown-unit__lbl">Sec</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-content" style="margin-top:var(--spacing-xs)">
+        <div class="alert-banner alert-banner--warning">
+          <div class="alert-banner__icon-wrap">
+            <span class="material-symbols-outlined">description</span>
+          </div>
+          <div class="alert-banner__body">
+            <div class="alert-banner__text">Bạn chưa hoàn thành việc điền hồ sơ Thông tin ứng viên</div>
+            <div class="alert-banner__deadline">Thời hạn: 20/06/2026</div>
+            <button class="alert-banner__link" onclick="openExternal('https://outsystems-dev.int.onemount.dev/EmployeeForm/Home?Group=INLJn6JEgEB23t1M6yiKdA==&Key=MUoTkkKqNN0KJFhy4lABqvWToPQIWx')">Điền thông tin ứng viên</button>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-banner--warning">
+          <div class="alert-banner__icon-wrap">
+            <span class="material-symbols-outlined">folder_open</span>
+          </div>
+          <div class="alert-banner__body">
+            <div class="alert-banner__text">Thông tin cần biết về các loại hồ sơ cần chuẩn bị vào ngày nhận việc</div>
+            <button class="alert-banner__link" onclick="openSheet('doc-sheet')">Tìm hiểu thêm</button>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-card__header">Thông tin Onboard</div>
+          <div class="info-row">
+            <span class="material-symbols-outlined info-row__icon">calendar_today</span>
+            <div>
+              <div class="info-row__label">Ngày Onboard · Thời hạn</div>
+              <div class="info-row__value">20/06/2026</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <span class="material-symbols-outlined info-row__icon">location_on</span>
+            <div>
+              <div class="info-row__label">Địa điểm</div>
+              <div class="info-row__value">Tower 2, Times City, 458 Minh Khai, phường Vĩnh Tuy, Hà Nội</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="contact-avatar">
+              <span class="contact-avatar__initials">VA</span>
+            </div>
+            <div>
+              <div class="info-row__label">Liên lạc</div>
+              <div class="info-row__value">Vy Anh</div>
+              <a class="info-row__phone" href="tel:0938061128">SDT: 0938061128</a>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--spacing-md);margin-bottom:var(--spacing-xs)">
+          <span class="home-section-title">Sổ tay nhân viên</span>
+        </div>
+
+        <button class="resource-img-card">
+          <div class="resource-img-card__cover" style="background-position:left center"></div>
+          <div class="resource-img-card__sub">Dành cho nhân viên mới</div>
+          <div class="resource-img-card__title">Sổ tay nhân viên</div>
+        </button>
+
+        <button class="resource-img-card" onclick="openSheet('doc-sheet')">
+          <div class="resource-img-card__cover" style="background-position:center 30%"></div>
+          <div class="resource-img-card__sub">Dành cho nhân viên mới</div>
+          <div class="resource-img-card__title">Danh mục giấy tờ cần thiết</div>
+        </button>
+
+        <button class="resource-img-card">
+          <div class="resource-img-card__cover" style="background-position:right center"></div>
+          <div class="resource-img-card__sub">Dành cho nhân viên mới</div>
+          <div class="resource-img-card__title">Quy trình hội nhập tại Masterise Group</div>
+        </button>
+
+        <div class="resource-img-card">
+          <div class="resource-img-card__cover" style="background-position:center 70%"></div>
+          <div class="resource-img-card__sub">Dành cho nhân viên mới</div>
+          <div class="resource-title-row">
+            <div class="resource-img-card__title">Trải nghiệm Office tour</div>
+            <button class="office-section__link" style="flex-shrink:0">Xem tất cả</button>
+          </div>
+        </div>
+
+        <div class="office-section">
+          <div class="office-section__header">
+            <div class="office-section__title">Masterise Group</div>
+          </div>
+          <div class="office-item">
+            <div class="office-item__icon">
+              <img src="map-img-64.png" style="width:64px;height:64px;object-fit:contain;" alt="">
+            </div>
+            <div class="office-item__body">
+              <div class="office-item__city">Hà Nội</div>
+              <div class="office-item__addr">Tòa One Mount, KĐT Times City, 458 Minh Khai, Phường Vĩnh Tuy, Thành phố Hà Nội</div>
+              <button class="office-item__map" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=Times%20City%20458%20Minh%20Khai%20Ha%20Noi')">Xem bản đồ</button>
+            </div>
+          </div>
+          <div class="office-item">
+            <div class="office-item__icon">
+              <img src="map-img-64.png" style="width:64px;height:64px;object-fit:contain;" alt="">
+            </div>
+            <div class="office-item__body">
+              <div class="office-item__city">Hồ Chí Minh</div>
+              <div class="office-item__addr">Tầng 6, Tòa nhà Lumiere Riverside - Tháp West, 275 Võ Nguyên Giáp, Phường An Phú, Thành phố Hồ Chí Minh</div>
+              <button class="office-item__map" onclick="openExternal('https://www.google.com/maps/search/?api=1&query=Lumiere%20Riverside%20275%20Vo%20Nguyen%20Giap%20Thu%20Duc')">Xem bản đồ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="social-section">
+          <div class="social-title">Kết nối với Masterise</div>
+          <div class="social-row">
+            <button class="social-icon" aria-label="Facebook" onclick="openExternal('https://www.facebook.com/masterisehomes')">f</button>
+            <button class="social-icon" aria-label="TikTok" onclick="openExternal('https://www.tiktok.com/@masterisehomes')">
+              <span class="material-symbols-outlined">music_note</span>
+            </button>
+            <button class="social-icon" aria-label="LinkedIn" onclick="openExternal('https://www.linkedin.com/company/masterise-group')">in</button>
+            <button class="social-icon" aria-label="Instagram" onclick="openExternal('https://www.instagram.com/masterisehomes')">
+              <span class="material-symbols-outlined" style="font-size:18px">photo_camera</span>
+            </button>
+            <button class="social-icon" aria-label="YouTube" onclick="openExternal('https://www.youtube.com/@MasteriseHomes')">
+              <span class="material-symbols-outlined">play_arrow</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="height:8px"></div>
+      </div>
+
+    </div>
+
+    <div class="home-cta">
+      <button class="btn btn--primary js-start-onboard" onclick="startOnboardFromPreHome()">
+        Bắt đầu hành trình Onboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Thông tin nhân viên -->
+  <div class="sheet-overlay" id="employee-sheet">
+    <div class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-title">Thông tin nhân viên</span>
+        <button class="sheet-close" onclick="closeSheet('employee-sheet')" aria-label="Đóng">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="sheet-scroll">
+        <div class="employee-info-list">
+          <div class="info-field"><div class="info-field__label">Họ và tên</div><div class="info-field__value">Nguyễn Anh Tú</div></div>
+          <div class="info-field"><div class="info-field__label">Email</div><div class="info-field__value">tuna21@masterise.com</div></div>
+          <div class="info-field"><div class="info-field__label">Số điện thoại</div><div class="info-field__value">09382929191</div></div>
+          <div class="info-field"><div class="info-field__label">Ngày sinh</div><div class="info-field__value">20/10/1990</div></div>
+          <div class="info-field"><div class="info-field__label">Bộ phận</div><div class="info-field__value">Vận hành kinh doanh</div></div>
+          <div class="info-field"><div class="info-field__label">Chức danh</div><div class="info-field__value">Chuyên viên cao cấp Kỹ sư CN - UI/UX</div></div>
+          <div class="info-field"><div class="info-field__label">Tỉnh/TP làm việc</div><div class="info-field__value">Hà Nội</div></div>
+          <div class="info-field"><div class="info-field__label">Địa điểm làm việc</div><div class="info-field__value">Times City</div></div>
+          <div class="info-field"><div class="info-field__label">Quản lý trực tiếp</div><div class="info-field__value">Mai Hồ Điệp</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet: Hồ sơ cần chuẩn bị -->
+  <div class="sheet-overlay" id="doc-sheet">
+    <div class="sheet">
+      <div class="sheet-head">
+        <span class="sheet-title">Hồ sơ cần chuẩn bị</span>
+        <button class="sheet-close" onclick="closeSheet('doc-sheet')" aria-label="Đóng">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="sheet-scroll">
+        <div class="doc-list">
+          <div class="doc-item"><span class="doc-item__index">1</span><div class="doc-item__content"><div class="doc-item__title">Căn cước công dân</div><div class="doc-item__desc">Mang bản gốc để đối chiếu.</div></div></div>
+          <div class="doc-item"><span class="doc-item__index">2</span><div class="doc-item__content"><div class="doc-item__title">Sổ hộ khẩu</div><div class="doc-item__desc">Mang theo bản gốc hoặc chuẩn bị ảnh chụp rõ nét, chụp toàn bộ bìa và trang thông tin.</div></div></div>
+          <div class="doc-item"><span class="doc-item__index">3</span><div class="doc-item__content"><div class="doc-item__title">Bằng cấp</div><div class="doc-item__desc">Mang bản gốc để đối chiếu tại ngày nhận việc.</div></div></div>
+          <div class="doc-item"><span class="doc-item__index">4</span><div class="doc-item__content"><div class="doc-item__title">Giấy xác nhận về tư pháp</div><div class="doc-item__desc">- Mẫu số 01 về tình trạng tiền án, tiền sự (không áp dụng với CTV).<br>- Giữ nguyên bản cứng, có dấu của cơ quan thẩm quyền.<br>- Mang theo giấy hẹn trả hồ sơ nếu chưa chuẩn bị kịp hồ sơ.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 6 — TASK LIST (Hành trình Onboard)
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-tasks">
+    <div class="status-bar status-bar--branded">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="nav-header">
+      <button class="nav-header__back" onclick="backFromTasks()" aria-label="Quay lại">
+        <span class="material-symbols-outlined">arrow_back_ios</span>
+      </button>
+      <span class="nav-header__title">Hành trình Onboard</span>
+    </div>
+
+    <div class="tasks-info-tip">
+      <div class="tasks-info-tip__icon-wrap">
+        <img src="onboarding-task-img48.png" alt="" onerror="this.outerHTML='<span class=\'material-symbols-outlined\' style=\'font-size:24px;color:var(--icon-brand)\'>emoji_objects</span>'">
+      </div>
+      <span class="tasks-info-tip__text">Vào ngày onboard <span class="tasks-info-tip__date">20/06/2026</span>, bạn hãy đánh dấu các mục sau nhé.</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-label-row">
+        <span class="progress-label" id="progress-label"><strong>0/18</strong> hoàn thành</span>
+      </div>
+    </div>
+
+    <div class="task-list" id="task-list">
+      <!-- Tasks rendered by JS -->
+    </div>
+
+    <div class="btn-bar">
+      <div class="btn-bar__divider"></div>
+      <div class="btn-bar__group">
+        <button class="btn btn--primary" id="tasks-continue-btn" disabled onclick="completeOnboardingTasks()">Tiếp tục</button>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Gặp đầu mối tuyển dụng -->
+    <div class="sheet-overlay" id="bs-recruitment">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Gặp đầu mối tuyển dụng</span>
+          <button class="sheet-close" onclick="closeSheet('bs-recruitment')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-person">
+            <div class="sheet-avatar">
+              <span class="material-symbols-outlined" style="font-size:28px;color:var(--icon-primary)">person</span>
+            </div>
+            <span class="sheet-person-name">Nguyễn Quang Thái</span>
+          </div>
+          <div class="sheet-contact-list">
+            <div class="sheet-contact-row">
+              <span class="material-symbols-outlined">business</span>
+              <span>Phòng vận hành kinh doanh</span>
+            </div>
+            <div class="sheet-contact-row">
+              <span class="material-symbols-outlined">mail</span>
+              <a href="mailto:tuna21@masterise.com">tuna21@masterise.com</a>
+            </div>
+            <div class="sheet-contact-row">
+              <span class="material-symbols-outlined">call</span>
+              <a href="tel:09382929191">09382929191</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Nhận laptop và tài khoản -->
+    <div class="sheet-overlay" id="bs-laptop">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Nhận laptop và tài khoản công việc</span>
+          <button class="sheet-close" onclick="closeSheet('bs-laptop')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text">
+            <p>Đầu mối IT sẽ bàn giao máy tính và tài khoản công việc cho bạn.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Đăng nhập My Masterise -->
+    <div class="sheet-overlay" id="bs-login">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Đăng nhập ứng dụng My Masterise</span>
+          <button class="sheet-close" onclick="closeSheet('bs-login')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text">
+            <p>Giờ đây bạn đã được cung cấp tài khoản làm việc và chính thức trở thành nhân viên công ty.</p>
+            <p>Hãy đăng nhập ngay bằng tài khoản được cấp để sử dụng đầy đủ tính năng và tiếp tục hành trình.</p>
+          </div>
+        </div>
+        <div class="sheet-cta">
+          <button class="btn btn--primary" onclick="loginWithIssuedAccount()">
+            Đăng nhập
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Làm quen với tính năng (variant) -->
+    <div class="sheet-overlay" id="bs-app-feature">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Làm quen với tính năng</span>
+          <button class="sheet-close" onclick="closeSheet('bs-app-feature')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text" id="bs-app-feature-body">
+            <p>Khám phá các tính năng xin nghỉ phép và các tính năng hấp dẫn khác trên trang chủ của ứng dụng My Masterise bạn nhé.</p>
+          </div>
+        </div>
+        <div class="sheet-cta" id="bs-app-feature-cta">
+          <button class="btn btn--primary" onclick="loginWithIssuedAccount(7)">
+            Đăng nhập
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Nộp hồ sơ -->
+    <div class="sheet-overlay" id="bs-profile">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Nộp hồ sơ</span>
+          <button class="sheet-close" onclick="closeSheet('bs-profile')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text" id="bs-profile-body">
+            <p>Các bước thực hiện:</p>
+            <p>1. <strong>Đăng nhập</strong> vào ứng dụng My Masterise<br>2. Chọn tính năng <strong>Hồ sơ NV</strong><br>3. <strong>Tải lên</strong> hồ sơ của bạn.</p>
+          </div>
+        </div>
+        <div class="sheet-cta">
+          <button class="btn btn--primary" id="bs-profile-cta-btn" onclick="loginWithIssuedAccount(8)">
+            Đăng nhập
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Ký Hợp đồng lao động -->
+    <div class="sheet-overlay" id="bs-contract">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Ký Hợp đồng lao động</span>
+          <button class="sheet-close" onclick="closeSheet('bs-contract')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text">
+            <p>Bộ phận Dịch vụ nhân sự (HRBP) sẽ giúp bạn hoàn thiện các thủ tục liên quan đến hợp đồng nhé.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Tham quan văn phòng -->
+    <div class="sheet-overlay" id="bs-tour">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Tham quan văn phòng</span>
+          <button class="sheet-close" onclick="closeSheet('bs-tour')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-body-text">
+            <p>Bạn sẽ được hướng dẫn và làm quen với các phòng chức năng, giải trí, vị trí làm việc của các phòng ban trong hoạt động này.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet: Tham gia các kênh -->
+    <div class="sheet-overlay" id="bs-channels">
+      <div class="sheet">
+        <div class="sheet-head">
+          <span class="sheet-title">Tham gia các kênh online</span>
+          <button class="sheet-close" onclick="closeSheet('bs-channels')" aria-label="Đóng">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="sheet-scroll">
+          <div class="sheet-channels">
+            <p>Bạn có thể lựa chọn tham gia các kênh hữu ích sau:</p>
+            <div class="channel-section">
+              <div class="channel-section-title">1. Kênh chung của toàn thể CBNV Masterise</div>
+              <div class="channel-entry"><b>#random</b>: Kênh thông tin chung và tương tác các vấn đề công việc hoặc các vấn đề được nhiều CBNV Masterise quan tâm.</div>
+              <div class="channel-entry"><b>#general</b>: Kênh thông tin chính thống của Masterise.</div>
+            </div>
+            <div class="channel-section">
+              <div class="channel-section-title">2. Các kênh học tập và phát triển</div>
+              <div class="channel-entry"><b>#learning, #til</b>: Đây là các kênh tương tác hai chiều. Hãy mạnh dạn chia sẻ những tài liệu, cuốn sách, chương trình đào tạo,... mà bạn nghĩ sẽ nhiều CBNV Masterise quan tâm nhé.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 6 — QUIZ
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-quiz">
+    <div class="status-bar status-bar--branded">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="nav-header">
+      <button class="nav-header__back" onclick="goTo('screen-tasks')" aria-label="Quay lại">
+        <span class="material-symbols-outlined">arrow_back_ios</span>
+      </button>
+      <span class="nav-header__title">Vượt qua bài Quiz</span>
+    </div>
+    <div class="quiz-body">
+      <div class="quiz-inform">
+        <img src="im-48-quiz.png" alt="">
+        <div class="quiz-inform__text">Ôn lại nội dung được đào tạo</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="quiz-q__title">Câu 1: Masterise Group được thành lập ngày nào?</div>
+        <div class="quiz-feedback is-visible">Chưa chính xác. Thử lại lần nữa nào!</div>
+        <div class="quiz-options">
+          <button class="quiz-option is-wrong" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">19/09/2019</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="true"><span class="quiz-radio"></span><span class="quiz-option__label">19/09/2020</span><span class="quiz-status"><span class="material-symbols-outlined">check</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">18/08/2019</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">18/08/2020</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="quiz-q__title">Câu 2: Giờ ăn sáng tại khu vực canteen trong công ty kết thúc lúc mấy giờ?</div>
+        <div class="quiz-feedback">Chưa chính xác. Thử lại lần nữa nào!</div>
+        <div class="quiz-options">
+          <button class="quiz-option is-correct" data-correct="true"><span class="quiz-radio"></span><span class="quiz-option__label">19/09/2019</span><span class="quiz-status"><span class="material-symbols-outlined">check</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">19/09/2020</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">18/08/2019</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">18/08/2020</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+        </div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="quiz-q__title">Câu 3: Đâu KHÔNG phải giá trị cốt lõi của văn hoá success tại One Mount?</div>
+        <div class="quiz-feedback">Chưa chính xác. Thử lại lần nữa nào!</div>
+        <div class="quiz-options">
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">Hướng đến thành quả</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">Đổi mới sáng tạo</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="false"><span class="quiz-radio"></span><span class="quiz-option__label">Tư duy kinh doanh mạnh mẽ</span><span class="quiz-status"><span class="material-symbols-outlined">close</span></span></button>
+          <button class="quiz-option" data-correct="true"><span class="quiz-radio"></span><span class="quiz-option__label">Góc nhìn độc lập, đột phá</span><span class="quiz-status"><span class="material-symbols-outlined">check</span></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-bar">
+      <div class="btn-bar__divider"></div>
+      <div class="btn-bar__group">
+        <button class="btn btn--primary" id="quiz-complete-btn" disabled onclick="completeQuiz()">Hoàn thành</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 7 — SURVEY (Đóng góp ý kiến)
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-survey">
+    <div class="status-bar status-bar--branded">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="nav-header">
+      <button class="nav-header__back" onclick="goTo('screen-tasks')" aria-label="Quay lại">
+        <span class="material-symbols-outlined">arrow_back_ios</span>
+      </button>
+      <span class="nav-header__title">Đóng góp ý kiến</span>
+    </div>
+    <div class="survey-body">
+      <div class="survey-header-card">
+        <div class="survey-icon-wrap">
+          <span class="material-symbols-outlined">rate_review</span>
+        </div>
+        <div class="survey-header-text">Cảm nhận về quy trình hội nhập tại Masterise Group</div>
+      </div>
+
+      <!-- Q1 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 1</div>
+        <div class="survey-q-title">Trải nghiệm Onboard tại Masterise?</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q2 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 2</div>
+        <div class="survey-q-title">Bạn hài lòng với quá trình phỏng vấn và mời làm việc tại Masterise?</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q3 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 3</div>
+        <div class="survey-q-title">Anh/chị được TA/HRBP tiếp đón đúng giờ &amp; nhiệt tình</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q4 Yes/No -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 4</div>
+        <div class="survey-q-title">Anh/chị được cung cấp đầy đủ tài khoản (G-Suite, Slack,...) &amp; trang thiết bị (Laptop, locker) &amp; giải đáp các thắc mắc liên quan (nếu có) trong ngày làm việc đầu tiên</div>
+        <div class="yn-opts">
+          <button class="yn-opt selected" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Có</span></button>
+          <button class="yn-opt" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Không</span></button>
+        </div>
+      </div>
+
+      <!-- Q5 Yes/No -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 5</div>
+        <div class="survey-q-title">Anh/chị được ký hợp đồng lao động và giải đáp các thắc mắc liên quan (nếu có) trong ngày làm việc đầu tiên</div>
+        <div class="yn-opts">
+          <button class="yn-opt selected" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Có</span></button>
+          <button class="yn-opt" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Không</span></button>
+        </div>
+      </div>
+
+      <!-- Q6 Yes/No -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 6</div>
+        <div class="survey-q-title">Anh/chị được hướng dẫn sử dụng app My Masterise để chấm công, tao leave request trong ngày làm việc đầu tiên</div>
+        <div class="yn-opts">
+          <button class="yn-opt selected" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Có</span></button>
+          <button class="yn-opt" onclick="selectYN(this)"><div class="yn-radio"><div class="yn-radio-dot"></div></div><span class="yn-label">Không</span></button>
+        </div>
+      </div>
+
+      <!-- Q7 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 7</div>
+        <div class="survey-q-title">Chương trình đào tạo hội nhập (online/offline) cung cấp cho anh/chị các thông tin cần thiết một cách đầy đủ và dễ hiểu</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q8 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 8</div>
+        <div class="survey-q-title">Tại bộ phận, anh/chị được quản lý trực tiếp và các đồng nghiệp / buddy chào đón &amp; hướng dẫn đầy đủ, nhiệt tình</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q9 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 9</div>
+        <div class="survey-q-title">Bạn hài lòng và cảm thấy việc đặt mục tiêu công việc trong giai đoạn thử việc với quản lý trực tiếp rất hữu ích</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q10 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 10</div>
+        <div class="survey-q-title">Bạn hài lòng với trải nghiệm onboarding (Onboarding Journey) trên ứng dụng My One Mount</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q11 Rating -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 11</div>
+        <div class="survey-q-title">Bạn được cung cấp các đầu mối liên hệ để biết cần tìm đến ai khi có những vấn đề khác nhau</div>
+        <div class="survey-q-hint">1 = Hoàn toàn KHÔNG đồng ý, 5 = Hoàn toàn đồng ý</div>
+        <div class="rating-scale">
+          <button class="rating-cell" onclick="selectRating(this)">1</button>
+          <button class="rating-cell" onclick="selectRating(this)">2</button>
+          <button class="rating-cell" onclick="selectRating(this)">3</button>
+          <button class="rating-cell" onclick="selectRating(this)">4</button>
+          <button class="rating-cell selected" onclick="selectRating(this)">5</button>
+        </div>
+      </div>
+
+      <!-- Q12 Text -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 12</div>
+        <div class="survey-q-title">Điều bạn thích nhất trong quá trình onboard?</div>
+        <textarea class="survey-textarea" placeholder="Câu trả lời của bạn" rows="3"></textarea>
+      </div>
+
+      <!-- Q13 Text -->
+      <div class="survey-q">
+        <div class="survey-q-num">Câu 13</div>
+        <div class="survey-q-title">Điều bạn cảm thấy cần cải thiện trong quá trình onboard</div>
+        <textarea class="survey-textarea" placeholder="Câu trả lời của bạn" rows="3"></textarea>
+      </div>
+    </div>
+    <div class="btn-bar">
+      <div class="btn-bar__divider"></div>
+      <div class="btn-bar__group">
+        <button class="btn btn--primary" onclick="goTo('screen-success')">Hoàn thành</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       SCREEN 8 — ONBOARDING SUCCESS
+  ═══════════════════════════════════ -->
+  <div class="screen" id="screen-success">
+    <div class="status-bar status-bar--light">
+      <span>9:41</span>
+      <div class="status-bar__right">
+        <span class="material-symbols-outlined" style="font-size:14px">signal_cellular_alt</span>
+        <span class="material-symbols-outlined" style="font-size:14px">wifi</span>
+        <span class="material-symbols-outlined" style="font-size:14px">battery_full</span>
+      </div>
+    </div>
+    <div class="success-lang">
+      <button class="lang-btn active">Vi</button>
+      <button class="lang-btn">En</button>
+    </div>
+    <div class="success-body">
+      <img class="success-logo" src="logo_mag_brown.png" alt="Masterise Group"
+        onerror="this.outerHTML='<div style=\'width:120px;height:120px;display:flex;align-items:center;justify-content:center\'><span class=\'material-symbols-outlined\' style=\'font-size:72px;color:var(--icon-brand)\'>star</span></div>'">
+      <div class="success-brand">Masterise Group</div>
+      <div class="success-msg">
+        <p>Cảm ơn <strong>Nguyễn Anh Tú</strong></p>
+        <p>Chúc bạn đạt nhiều thành công tại Masterise.</p>
+      </div>
+    </div>
+    <div class="btn-bar">
+      <div class="btn-bar__divider"></div>
+      <div class="btn-bar__group">
+        <button class="btn btn--primary" onclick="goTo('screen-home-popup')">Trải nghiệm My Masterise</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.phone -->
+
+<script>
+  /* ── OTP keyboard state (declared before goTo) ── */
+  let codeInput = [];
+  const CODE_LEN = 4;
+  const VALID_ONBOARD_CODE = '1111';
+  let onboardingCompleted = false;
+  let microsoftLoginEnabled = false;
+  let microsoftAuthenticated = false;
+  let pendingLoginTaskId = null;
+  const lockedTasks = new Set();
+  let tasksBackTarget = 'screen-home';
+  let showWelcomePopupOnHome = false;
+
+  /* ── Navigation ── */
+  function goTo(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(screenId);
+    if (target) target.classList.add('active');
+    if (screenId === 'screen-otp') {
+      codeInput = [];
+      document.getElementById('code-boxes').classList.remove('has-error');
+      document.getElementById('code-error').classList.remove('visible');
+      renderCode();
+    }
+    if (screenId === 'screen-quiz') {
+      updateQuizCTA();
+    }
+    if (['screen-tasks', 'screen-quiz', 'screen-survey', 'screen-success'].includes(screenId)) {
+      microsoftLoginEnabled = true;
+    }
+    if (screenId === 'screen-success') {
+      onboardingCompleted = true;
+    }
+    if (screenId === 'screen-splash') {
+      updateMicrosoftLoginState();
+    }
+    if (screenId === 'screen-home' || screenId === 'screen-home-popup') {
+      updateHomeOnboardingCTA();
+    }
+    if (screenId === 'screen-home-popup') {
+      syncWelcomePopup();
+    }
+  }
+
+  function handleMicrosoftLogin() {
+    if (!microsoftLoginEnabled) return;
+    microsoftAuthenticated = true;
+    checked.add(6);
+    lockedTasks.add(6);
+    if (pendingLoginTaskId) {
+      const completedTaskId = pendingLoginTaskId;
+      checked.add(completedTaskId);
+      lockedTasks.add(completedTaskId);
+      pendingLoginTaskId = null;
+      syncTaskSheetState(completedTaskId);
+    }
+    syncTaskSheetState(7);
+    syncTaskSheetState(8);
+    renderTasks();
+    updateProgress();
+    showWelcomePopupOnHome = true;
+    goTo('screen-home-popup');
+  }
+
+  function syncWelcomePopup() {
+    const popup = document.getElementById('welcome-popup');
+    if (popup) popup.classList.toggle('open', showWelcomePopupOnHome);
+  }
+
+  function dismissWelcomePopup() {
+    showWelcomePopupOnHome = false;
+    syncWelcomePopup();
+  }
+
+  function startOnboardFromHomePopup() {
+    tasksBackTarget = 'screen-home-popup';
+    goTo('screen-tasks');
+  }
+
+  function startOnboardFromPreHome() {
+    tasksBackTarget = 'screen-home';
+    goTo('screen-tasks');
+  }
+
+  function backFromTasks() {
+    goTo(tasksBackTarget || 'screen-home');
+  }
+
+  function loginWithIssuedAccount(taskId = 6) {
+    pendingLoginTaskId = taskId;
+    microsoftLoginEnabled = true;
+    document.querySelectorAll('.sheet-overlay.open').forEach(sheet => sheet.classList.remove('open'));
+    goTo('screen-splash');
+  }
+
+  document.querySelectorAll('.qkey').forEach(k => {
+    const key = k.dataset.key;
+    if (!key || key === 'GO' || key === 'SHIFT' || key === '123' || key === 'SPACE') return;
+    k.addEventListener('click', () => {
+      if (key === 'DEL') {
+        codeInput.pop();
+      } else if (codeInput.length < CODE_LEN) {
+        codeInput.push(key);
+      }
+      document.getElementById('code-boxes').classList.remove('has-error');
+      document.getElementById('code-error').classList.remove('visible');
+      renderCode();
+    });
+  });
+
+  function renderCode() {
+    for (let i = 0; i < CODE_LEN; i++) {
+      const cc = document.getElementById('cc-' + i);
+      cc.querySelector('.code-char__val').textContent = codeInput[i] || '';
+      cc.classList.toggle('filled', !!codeInput[i]);
+    }
+    document.getElementById('code-continue-btn').disabled = codeInput.length < CODE_LEN;
+  }
+
+  function submitCode() {
+    if (codeInput.join('') === VALID_ONBOARD_CODE) {
+      goTo('screen-welcome');
+      return;
+    }
+    document.getElementById('code-boxes').classList.add('has-error');
+    document.getElementById('code-error').classList.add('visible');
+  }
+
+  /* ── Welcome scroll-to-unlock ── */
+  const wScroll = document.getElementById('welcome-scroll');
+  const wCta = document.getElementById('welcome-cta');
+  const wSentinel = document.getElementById('welcome-sentinel');
+  if (wScroll && wCta && wSentinel) {
+    const syncWelcomeCTA = () => {
+      const isAtEnd = wScroll.scrollTop + wScroll.clientHeight >= wScroll.scrollHeight - 2;
+      if (isAtEnd) wCta.classList.add('visible');
+    };
+    const revealObs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) wCta.classList.add('visible');
+    }, { root: wScroll, threshold: 0.9 });
+    revealObs.observe(wSentinel);
+    wScroll.addEventListener('scroll', syncWelcomeCTA);
+    requestAnimationFrame(syncWelcomeCTA);
+  }
+
+  /* ── Pre-onboard countdown ── */
+  const onboardDate = new Date('2026-06-20T08:50:00+07:00');
+  function updateCountdown() {
+    const diff = Math.max(0, onboardDate - new Date());
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = String(val).padStart(2, '0');
+    };
+    set('cd-days', days);
+    set('cd-hours', hours);
+    set('cd-mins', mins);
+    set('cd-secs', secs);
+  }
+
+  function openExternal(url) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  /* ── Bottom sheets ── */
+  function openSheet(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  }
+  function closeSheet(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  }
+
+  /* ── Tasks data ── */
+  const TASKS = [
+    { id: 1,  label: 'Đừng quên mang bình nước nhé',                             arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 2,  label: 'Tới công ty lúc 08:50',                                     arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 3,  label: 'Check-in tại quầy lễ tân',                                  arrow: false, sheet: null,            quiz: false, counts: true  },
+    { id: 4,  label: 'Gặp đầu mối tuyển dụng của bạn',                            arrow: true,  sheet: 'bs-recruitment', quiz: false, counts: true  },
+    { id: 5,  label: 'Nhận laptop và tài khoản công việc',                        arrow: true,  sheet: 'bs-laptop',     quiz: false, counts: true  },
+    { id: 6,  label: 'Đăng nhập ứng dụng My Masterise',                          arrow: true,  sheet: 'bs-login',      quiz: false, counts: true,  requiresMicrosoft: true },
+    { id: 7,  label: 'Làm quen với tính năng xin nghỉ phép và các tính năng khác',          arrow: true,  sheet: 'bs-app-feature',quiz: false, counts: true,  requiresMicrosoft: true },
+    { id: 8,  label: 'Tải hồ sơ lên ứng dụng My Masterise',                                                 arrow: true,  sheet: 'bs-profile',    quiz: false, counts: true,  requiresMicrosoft: true },
+    { id: 9,  label: 'Ký Hợp đồng lao động',                                      arrow: true,  sheet: 'bs-contract',   quiz: false, counts: true  },
+    { id: 10, label: 'Tham gia Đào tạo hội nhập',                                 arrow: false, sheet: null,            quiz: false, counts: true  },
+    { id: 11, label: 'Vượt qua bài Quiz',                                          arrow: true,  sheet: null,            quiz: true,  counts: true  },
+    { id: 12, label: 'Tham quan văn phòng',                                       arrow: true,  sheet: 'bs-tour',       quiz: false, counts: true  },
+    { id: 13, label: 'Về bộ phận làm việc',                                       arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 14, label: 'Tìm tủ locker',                                             arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 15, label: 'Tham gia các kênh hữu ích',                                 arrow: true,  sheet: 'bs-channels',   quiz: false, counts: true  },
+    { id: 16, label: 'Tham gia gặp Quản lý trực tiếp để đặt mục tiêu công việc', arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 17, label: 'Ăn trưa cùng đồng nghiệp',                                 arrow: false, sheet: null,            quiz: false, counts: false },
+    { id: 18, label: 'Nhận Welcome Kit độc đáo',                                  arrow: false, sheet: null,            quiz: false, counts: false },
+  ];
+
+  const TOTAL_COUNT = TASKS.length; /* 18 */
+  const checked = new Set();
+  let quizCompleted = false;
+
+  function renderTasks() {
+    const list = document.getElementById('task-list');
+    list.innerHTML = '';
+    TASKS.forEach(t => {
+      const isDone = checked.has(t.id);
+      const btn = document.createElement('button');
+      const isLocked = lockedTasks.has(t.id);
+      btn.className = 'task-item' + (isDone ? ' done' : '') + (isLocked ? ' locked' : '');
+      btn.innerHTML = `
+        <div class="task-check">
+          <span class="material-symbols-outlined check-icon">check</span>
+        </div>
+        <span class="task-label">${t.label}</span>
+        ${getTaskArrowMarkup(t, isLocked)}
+      `;
+      btn.querySelector('.task-check').addEventListener('click', event => {
+        event.stopPropagation();
+        if (lockedTasks.has(t.id)) return;
+        toggleTask(t.id, t.quiz && quizCompleted);
+      });
+      const arrow = btn.querySelector('.task-arrow');
+      if (arrow) {
+        arrow.addEventListener('click', event => {
+          event.stopPropagation();
+          openTaskDetail(t);
+        });
+      }
+      btn.addEventListener('click', () => {
+        if (lockedTasks.has(t.id)) {
+          if (t.sheet) openTaskDetail(t);
+          return;
+        }
+        if (t.quiz && !quizCompleted) return;
+        toggleTask(t.id, t.quiz && quizCompleted);
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  function getTaskArrowMarkup(task, isLocked) {
+    if (!task.arrow) return '';
+    if (task.id === 6 && isLocked) {
+      return '<span class="material-symbols-outlined task-arrow task-arrow--success">check_circle</span>';
+    }
+    return '<span class="material-symbols-outlined task-arrow">chevron_right</span>';
+  }
+
+  function openTaskDetail(task) {
+    if (task.quiz) {
+      goTo('screen-quiz');
+      return;
+    }
+    if (task.sheet) {
+      syncTaskSheetState(task.id);
+      openSheet(task.sheet);
+    }
+  }
+
+  function syncTaskSheetState(taskId) {
+    if (taskId === 7) {
+      const cta = document.getElementById('bs-app-feature-cta');
+      if (cta) cta.style.display = microsoftAuthenticated ? 'none' : '';
+    }
+    if (taskId === 8) {
+      const body = document.getElementById('bs-profile-body');
+      const btn = document.getElementById('bs-profile-cta-btn');
+      if (body) {
+        body.innerHTML = microsoftAuthenticated
+          ? '<p>Các bước thực hiện:</p><p>1. Đi đến tính năng <strong>Hồ sơ NV</strong><br>2. <strong>Tải lên</strong> hồ sơ của bạn</p>'
+          : '<p>Các bước thực hiện:</p><p>1. <strong>Đăng nhập</strong> vào ứng dụng My Masterise<br>2. Chọn tính năng <strong>Hồ sơ NV</strong><br>3. <strong>Tải lên</strong> hồ sơ của bạn.</p>';
+      }
+      if (btn) {
+        btn.textContent = microsoftAuthenticated ? 'Hồ sơ nhân viên' : 'Đăng nhập';
+        btn.onclick = microsoftAuthenticated ? null : () => loginWithIssuedAccount(8);
+      }
+    }
+  }
+
+  function toggleTask(id, forceDone = false) {
+    const task = TASKS.find(t => t.id === id);
+    if (task && task.quiz && !quizCompleted) {
+      goTo('screen-quiz');
+      return;
+    }
+    if (task && task.requiresMicrosoft && !microsoftAuthenticated) {
+      if (task.sheet) openSheet(task.sheet);
+      return;
+    }
+    if (lockedTasks.has(id)) return;
+    if (forceDone || !checked.has(id)) {
+      checked.add(id);
+    } else {
+      checked.delete(id);
+    }
+    renderTasks();
+    updateProgress();
+  }
+
+  function completeOnboardingTasks() {
+    const doneCount = getDoneCount();
+    if (doneCount < TOTAL_COUNT) return;
+    TASKS.forEach(t => checked.add(t.id));
+    renderTasks();
+    updateProgress();
+    goTo('screen-survey');
+  }
+
+  function completeQuiz() {
+    if (!isQuizFullyAnswered()) {
+      updateQuizCTA();
+      return;
+    }
+    quizCompleted = true;
+    checked.add(11); /* mark quiz task done */
+    renderTasks();
+    updateProgress();
+    goTo('screen-tasks');
+  }
+
+  document.querySelectorAll('.quiz-option').forEach(option => {
+    option.addEventListener('click', () => {
+      const question = option.closest('.quiz-q');
+      const feedback = question.querySelector('.quiz-feedback');
+      const options = question.querySelectorAll('.quiz-option');
+      const isCorrect = option.dataset.correct === 'true';
+
+      options.forEach(item => {
+        item.classList.remove('is-correct', 'is-wrong');
+      });
+
+      option.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+      if (feedback) feedback.classList.toggle('is-visible', !isCorrect);
+      updateQuizCTA();
+    });
+  });
+
+  function isQuizFullyAnswered() {
+    const questions = document.querySelectorAll('#screen-quiz .quiz-q');
+    return [...questions].every(question => {
+      const selected = question.querySelector('.quiz-option.is-correct, .quiz-option.is-wrong');
+      return selected && selected.dataset.correct === 'true' && selected.classList.contains('is-correct');
+    });
+  }
+
+  function updateQuizCTA() {
+    const btn = document.getElementById('quiz-complete-btn');
+    if (btn) btn.disabled = !isQuizFullyAnswered();
+  }
+
+  function getDoneCount() {
+    return [...checked].filter(id => TASKS.some(t => t.id === id)).length;
+  }
+
+  function updateProgress() {
+    const doneCount = getDoneCount();
+    const pct = TOTAL_COUNT > 0 ? (doneCount / TOTAL_COUNT) * 100 : 0;
+    document.getElementById('progress-label').innerHTML = `<strong>${doneCount}/${TOTAL_COUNT}</strong> hoàn thành`;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    const btn = document.getElementById('tasks-continue-btn');
+    if (btn) btn.disabled = doneCount < TOTAL_COUNT;
+  }
+
+  function updateHomeOnboardingCTA() {
+    document.querySelectorAll('.js-start-onboard').forEach(btn => {
+      btn.classList.toggle('is-hidden', onboardingCompleted);
+    });
+  }
+
+  function updateMicrosoftLoginState() {
+    const btn = document.getElementById('btn-ms-login');
+    if (btn) btn.setAttribute('aria-disabled', String(!microsoftLoginEnabled));
+  }
+
+  /* ── Rating / YN interaction ── */
+  function selectRating(btn) {
+    const siblings = btn.closest('.rating-scale').querySelectorAll('.rating-cell');
+    siblings.forEach(s => s.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+  function selectYN(btn) {
+    const siblings = btn.closest('.yn-opts').querySelectorAll('.yn-opt');
+    siblings.forEach(s => s.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  /* ── Init ── */
+  renderTasks();
+  updateProgress();
+  updateQuizCTA();
+  updateHomeOnboardingCTA();
+  updateMicrosoftLoginState();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+  renderCode();
+
+  /* Close sheet on overlay click */
+  document.querySelectorAll('.sheet-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) {
+        overlay.classList.remove('open');
+      }
+    });
+  });
+
+</script>
+</body>
+</html>
